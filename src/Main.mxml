@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+               xmlns:s="library://ns.adobe.com/flex/spark"
+               xmlns:mx="library://ns.adobe.com/flex/mx"
+               applicationComplete="init()"
+               width="320" height="240" backgroundColor="#000000">
+<fx:Script>
+  <![CDATA[
+    import flash.filters.BitmapFilterQuality;
+    import flash.filters.BlurFilter;
+    import flash.filters.ColorMatrixFilter;
+    import flash.filters.ConvolutionFilter;
+    
+    import mx.core.UIComponent;
+    import mx.events.ResizeEvent;
+
+    import com.freeactionscript.effects.explosion.LargeExplosion;
+    import com.freeactionscript.effects.explosion.MediumExplosion;
+    import com.freeactionscript.effects.explosion.SmallExplosion;
+    
+    private var bit_data:BitmapData;
+    private var bitmap:Bitmap;
+    private var video:Video = new Video(320,240);
+    
+    private var snowFlakes : Array = new Array(); 
+    private var numFlakes : uint = 10; 
+    private var screenArea:Rectangle;
+    
+    private var _smallExplosion:SmallExplosion;
+    private var _mediumExplosion:MediumExplosion;
+    private var _largeExplosion:LargeExplosion;
+    
+    private function init():void
+    {
+      _smallExplosion = new SmallExplosion(uic);
+      _mediumExplosion = new MediumExplosion(uic);
+      _largeExplosion = new LargeExplosion(uic);
+      
+    //attach Camera
+    var cam:Camera = Camera.getCamera();
+    cam.setMode(320,240,30);
+    video.attachCamera(cam);
+    vid.addChild(video);
+    
+    //onEnterFrame
+    addEventListener(Event.ENTER_FRAME, frameLoop);
+    
+    //Resize Event
+    stage.addEventListener(ResizeEvent.RESIZE,function(e:Event):void{
+      video = new Video(stage.stageWidth,stage.stageHeight);
+      video.attachCamera(cam);
+      vid.addChild(video);
+      video.width = stage.stageWidth;
+      video.height = stage.stageHeight;
+    });
+    
+    }
+       private var info = true;
+    private function frameLoop(e:Event):void
+    {
+
+      //webcam capture image
+      bit_data = new BitmapData(stage.stageWidth,stage.stageHeight,true,0xFF000000);
+      bit_data.draw(video);
+      
+      //Edge detection with Sobel Filter
+      var HORIZONTAL_SOBEL:ConvolutionFilter = new ConvolutionFilter(3,3, [0, 3, 0, 0.500000, -6, 0.500000, 0, 2, 0], 0.200000, 0);
+      bit_data.applyFilter(bit_data, bit_data.rect, new Point(0,0),  new flash.filters.BlurFilter(5, 5, 1));
+      bit_data.applyFilter(bit_data, bit_data.rect, new Point(0,0), HORIZONTAL_SOBEL);
+      bit_data.applyFilter(bit_data, bit_data.rect, new Point(0,0),  new flash.filters.BlurFilter(5, 2, 1));
+      bit_data.threshold(bit_data, bit_data.rect, new Point(0,0), ">", 2000000.000000, 4294967295.000000, 16777215, false);
+      
+    // bitmap = new Bitmap(bit_data);
+     //uis.addChild(bitmap);
+      
+      var snowflake : SnowFlake; 
+      screenArea = new Rectangle(0,0,stage.stageWidth,stage.stageHeight); 
+ 
+      // if we don't have the maximum number of flakes... 
+      if(snowFlakes.length<numFlakes)
+      {
+        snowflake = new SnowFlake(screenArea);
+        snowFlakes.push(snowflake); 
+        uic.addChild(snowflake);         
+      }
+      
+      
+      var wind : Number = ((screenArea.width/2) - mouseX);
+      wind /=60;
+      _smallExplosion.update();
+
+      for(var i:uint = 0; i<snowFlakes.length; i++)
+      {
+        var snowflakes:Object = snowFlakes[i];
+        if(bit_data.getPixel(snowflakes.x,snowflakes.y) > 2000000 && snowflakes.y > 20)
+        {
+
+        
+          _smallExplosion.create(snowflakes.x, snowflakes.y);
+      
+          snowflakes.y = 0;
+          
+        }
+        else
+        {
+          snowflakes.update(wind);
+        }
+      }
+      
+    }
+  ]]>
+</fx:Script>
+<s:VideoDisplay id="vid" x="0" y="0" width="320" height="240"/>
+<mx:UIComponent id="uic" width="100" height="100" />
+<mx:UIComponent id="uis" width="100" height="100" />
+</s:Application>

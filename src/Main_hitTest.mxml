@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+               xmlns:s="library://ns.adobe.com/flex/spark"
+               xmlns:mx="library://ns.adobe.com/flex/mx"
+               applicationComplete="init()"
+               width="400" height="250" backgroundColor="#000000">
+<fx:Script>
+  <![CDATA[
+    import flash.filters.ColorMatrixFilter;
+    import flash.filters.ConvolutionFilter;
+    
+    import mx.core.UIComponent;
+
+    private var ui:UIComponent = new UIComponent();
+    private var ar:Array = new Array();
+    
+    private var ii:Array = new Array;
+    private var k:Array = new Array;
+    private var rad:Number = 0;
+    private var maxSnow:Number = 150;
+    
+    private function init():void
+    {
+      addEventListener(Event.ENTER_FRAME, test);
+      box.addEventListener(MouseEvent.CLICK,function():void{
+        box.y -= 10;
+        
+      });
+    for(var i:uint=0; i < maxSnow ; i++)
+    {
+      ii[i] = 1+Math.random()*2 ;
+      k[i] = (Math.random()*2)-1;
+      
+      ar.push(new UIComponent());
+      ar[i].addChild(snow());
+      ar[i].alpha = Math.random();
+      ar[i].x = -10+this.width*Math.random();
+      ar[i].y = -50+this.height*Math.random();
+      
+      ar[i].scaleX = Math.random()*6;
+      ar[i].scaleY = ar[i].scaleX;
+       
+      addElement(ar[i]);
+    }
+ 
+      
+    
+    //image
+    var bit_data:BitmapData = new BitmapData(img.width,img.height,true,0xFF000000);
+    bit_data.draw(img);
+    var rLum : Number = 0.2225;
+    var gLum : Number = 0.7169;
+    var bLum : Number = 0.0606; 
+    
+    var matrix:Array = [ rLum, gLum, bLum, 0, 0,
+      rLum, gLum, bLum, 0, 0,
+      rLum, gLum, bLum, 0, 0,
+      0,    0,    0,    1, 0 ];
+    
+    var filter:ColorMatrixFilter = new ColorMatrixFilter(matrix);
+    
+    
+    var HORIZONTAL_SOBEL:ConvolutionFilter = new ConvolutionFilter(3,3,
+      [0, 3, 0, 0.500000, -6, 0.500000, 0, 2, 0], 0.200000, 0);
+    bit_data.applyFilter(bit_data,bit_data.rect,new Point(0,0),  new flash.filters.BlurFilter(5, 5, 1));
+
+    bit_data.applyFilter(bit_data,bit_data.rect,new Point(0,0), HORIZONTAL_SOBEL);
+    bit_data.applyFilter(bit_data,bit_data.rect,new Point(0,0),  new flash.filters.BlurFilter(5, 5, 1));
+    
+    bit_data.threshold(bit_data,bit_data.rect,new Point(0,0),   ">", 4284900966.000000, 4294967295.000000, 16777215, false);
+
+    
+
+    var bitmap:Bitmap = new Bitmap(bit_data);
+    uic.addChild(bitmap);
+    
+
+    }
+    
+
+    
+    private function test(e:Event):void
+    {
+      
+      for(var i:uint=0; i < maxSnow ; i++)
+      {
+
+        if(box.hitTestObject(ar[i]) == true) 
+        {
+          ar[i].y = ar[i].y;
+          ar[i].alpha -= 0.008; 
+          trace(ar[i].alpha);
+          if(ar[i].alpha < 0 )
+          {
+            
+            ar[i].alpha =  Math.random();
+            ar[i].scaleX = Math.random()*6;
+            ar[i].scaleY = ar[i].scaleX;
+            ar[i].y = -50;
+
+          }
+        }
+        else
+        {
+        
+  
+
+        if(ar[i].y  >= this.height)
+        {
+          ar[i].y  = -30;
+        }
+        
+        if(ar[i].x  >= this.width)
+        {
+          ar[i].x = -10+this.width*Math.random();
+          ar[i].y  = -30;
+
+        }
+
+        rad += (k[i]/180)*Math.PI ;
+        ar[i].x -=k[i];
+        ar[i].y += ii[i] ;
+        }
+      } 
+    }
+
+    
+    private function snow():Sprite
+    {
+      var s:Sprite = new Sprite();
+      var circleColor:uint = 0xff55ff77;
+      var radius:uint = 1;
+      var circle1:Shape = new Shape();
+      circle1.graphics.beginFill(circleColor);
+      circle1.graphics.drawCircle(radius, radius, radius);
+      circle1.graphics.endFill();
+      s.addChild(circle1);
+      return s;      
+    }
+  ]]>
+</fx:Script>
+  <s:BorderContainer id="box" x="6" y="228" width="210" height="12">
+  </s:BorderContainer>
+  <s:Image x="240" y="38" width="143" height="202" id="img"
+           source="assets/webcamsnow.jpg"/>
+  
+  <mx:UIComponent id="uic" x="71" y="25" width="104" height="99"/>
+</s:Application>

@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+               xmlns:s="library://ns.adobe.com/flex/spark"
+               xmlns:mx="library://ns.adobe.com/flex/mx"
+               applicationComplete="init()"
+               width="320" height="240" backgroundColor="#000000">
+<fx:Script>
+  <![CDATA[
+    import flash.filters.BitmapFilterQuality;
+    import flash.filters.BlurFilter;
+    import flash.filters.ColorMatrixFilter;
+    import flash.filters.ConvolutionFilter;
+    
+    import mx.core.UIComponent;
+
+    private var ui:UIComponent = new UIComponent();
+    private var ar:Array = new Array();
+    
+    private var ii:Array = new Array;
+    private var k:Array = new Array;
+    private var rad:Number = 0;
+    private var maxSnow:Number = 100;
+    private var bit_data:BitmapData;
+    private var bitmap:Bitmap;
+    private var video:Video = new Video(320,240);
+
+    private function init():void
+    {
+      var cam:Camera = Camera.getCamera();
+      cam.setMode(320,240,30);
+      video.attachCamera(cam);
+      vid.addChild(video);
+      
+      addEventListener(MouseEvent.CLICK,function():void{
+        //var mat:Matrix = new Matrix();
+        //mat.setTo(1,0,0,1,0,50); //position 
+        //bit_data.draw(img,mat);
+        trace(bitmap.bitmapData.getPixel(mouseX,mouseY)); 
+      });
+
+    //addEventListener(Event.ENTER_FRAME, Monitor);
+
+
+
+    addEventListener(Event.ENTER_FRAME, frameLoop); 
+
+    }
+    private var snowFlakes : Array = new Array(); 
+    
+    // and decide the maxium number of flakes we want
+    private var numFlakes : uint = 500; 
+    
+    // and define a rectangle to store the screen dimensions in. 
+    private var screenArea:Rectangle;
+    private function frameLoop(e:Event):void
+    {
+      //image
+      bit_data = new BitmapData(320,240,true,0xFF000000);
+      bit_data.draw(video);
+      
+      var HORIZONTAL_SOBEL:ConvolutionFilter = new ConvolutionFilter(3,3, [0, 3, 0, 0.500000, -6, 0.500000, 0, 2, 0], 0.200000, 0);
+      bit_data.applyFilter(bit_data,bit_data.rect,new Point(0,0),  new flash.filters.BlurFilter(5, 5, 1));
+      bit_data.applyFilter(bit_data,bit_data.rect,new Point(0,0), HORIZONTAL_SOBEL);
+      bit_data.applyFilter(bit_data,bit_data.rect,new Point(0,0),  new flash.filters.BlurFilter(5, 2, 1));
+      bit_data.threshold(bit_data,bit_data.rect,new Point(0,0),   ">", 4284900966.000000, 4294967295.000000, 16777215, false);
+       
+      
+      
+      var snowflake : SnowFlake; 
+      screenArea = new Rectangle(0,0,stage.stageWidth,stage.stageHeight); 
+ 
+      // if we don't have the maximum number of flakes... 
+      if(snowFlakes.length<numFlakes)
+      {
+        snowflake = new SnowFlake(screenArea);
+        snowFlakes.push(snowflake); 
+        uic.addChild(snowflake);         
+      }
+      
+      // now calculate the wind factor by looking at the x position 
+      // of the mouse relative to the centre of the screen
+      var wind : Number = ((screenArea.width/2) - mouseX);
+      
+      // and divide by 60 to make it smaller
+      wind /=60; 
+      
+      // now loop through every snowflake
+      for(var i:uint = 0; i<snowFlakes.length; i++)
+      {
+        
+        snowflake = snowFlakes[i]; 
+        
+        // and update it
+         
+        
+        if(bit_data.getPixel(snowflake.x,snowflake.y) > 2220310 && snowflake.y > 50)
+        {
+          snowflake.y = snowflake.y
+        }
+        else
+        {
+          snowflake.update(wind);
+        }
+
+      }
+      
+    }
+    
+    private var it:int = 0;
+    private function Monitor(e:Event):void
+    {
+      //image
+      bit_data = new BitmapData(320,240,true,0xFF000000);
+      bit_data.draw(video);
+      
+      var HORIZONTAL_SOBEL:ConvolutionFilter = new ConvolutionFilter(3,3, [0, 3, 0, 0.500000, -6, 0.500000, 0, 2, 0], 0.200000, 0);
+      bit_data.applyFilter(bit_data,bit_data.rect,new Point(0,0),  new flash.filters.BlurFilter(5, 5, 1));
+      bit_data.applyFilter(bit_data,bit_data.rect,new Point(0,0), HORIZONTAL_SOBEL);
+      bit_data.applyFilter(bit_data,bit_data.rect,new Point(0,0),  new flash.filters.BlurFilter(5, 2, 1));
+      bit_data.threshold(bit_data,bit_data.rect,new Point(0,0),   ">", 4284900966.000000, 4294967295.000000, 16777215, false);
+      
+      
+      
+      bitmap = new Bitmap(bit_data);
+      //uic.addChild(bitmap);
+      
+
+      if(it < 400)
+      {
+      var rnd:int = Math.random()*4;
+      for(var i:Number = 0; i < rnd ; i++)
+      {
+        ii[it] = 1+Math.random()*3 ;
+        k[it] = (Math.random()*2)-1;
+        
+        ar.push(new UIComponent());
+        ar[it].addChild(snow());
+        ar[it].alpha = Math.random();
+        ar[it].x = -10+this.width*Math.random();
+        ar[it].y = -20;
+        
+        ar[it].scaleX = Math.random()*3;
+        ar[it].scaleY = ar[it].scaleX;
+        ar[it].id = it;
+        ar[it].addEventListener(Event.ENTER_FRAME, function(e:Event):void{   
+  
+          
+          if(bitmap.bitmapData.getPixel(e.currentTarget.x,e.currentTarget.y) > 2220310 && e.currentTarget.y > 50)
+          {
+            e.currentTarget.y = e.currentTarget.y;
+            e.currentTarget.alpha -= 0.001;
+            if(e.currentTarget.alpha <= 0 )
+            {
+              
+              e.currentTarget.alpha =  Math.random();
+              //e.currentTarget.scaleX = Math.random()*6;
+              //e.currentTarget.scaleY = e.currentTarget.scaleX;
+              e.currentTarget.y = -30;
+              
+            }
+          }
+          else
+          {
+          e.currentTarget.x -=k[e.currentTarget.id];
+          e.currentTarget.y += ii[e.currentTarget.id] ;
+
+          if(e.currentTarget.y  >= stage.stageHeight)
+          {
+            e.currentTarget.y  = -30;
+          }
+          
+          if(e.currentTarget.x  >= stage.stageWidth || e.currentTarget.x < 0)
+          {
+            e.currentTarget.x = -10+stage.stageWidth*Math.random();
+            e.currentTarget.y  = -30;
+            
+          }
+          
+        }
+
+        
+        });
+        
+        uic.addChild(ar[it]);
+        
+        it++;
+      }
+      }
+    }
+    
+    private function test(e:Event):void
+    {
+      
+      for(var i:uint=0; i < maxSnow ; i++)
+      {
+        
+        
+        var none:Boolean = false;
+        if(bit_data.getPixel(ar[i].x,ar[i].y) > 2240000)
+        {
+          ar[i].y = ar[i].y;
+          ar[i].alpha -= 0.004; 
+          if(ar[i].alpha < 0 )
+          {
+            
+            ar[i].alpha =  Math.random();
+            ar[i].scaleX = Math.random()*6;
+            ar[i].scaleY = ar[i].scaleX;
+            ar[i].y = -50;
+
+          }
+        }
+        else
+        {
+        
+  
+
+        if(ar[i].y  >= this.height)
+        {
+          ar[i].y  = -30;
+        }
+        
+        if(ar[i].x  >= this.width)
+        {
+          ar[i].x = -10+this.width*Math.random();
+          ar[i].y  = -30;
+
+        }
+
+        rad += (k[i]/180)*Math.PI ;
+        ar[i].x -=k[i];
+        ar[i].y += ii[i] ;
+        }
+      } 
+    }
+
+    
+    private function snow():Sprite
+    {
+      var s:Sprite = new Sprite();
+      var circleColor:uint = 0xffffff;
+      var radius:uint = 1;
+      var circle:Shape = new Shape();
+      circle.graphics.beginFill(circleColor);
+      var blur:BlurFilter = new BlurFilter(); 
+      blur.blurX = 1+Math.random()*6; 
+      blur.blurY = blur.blurX; 
+      blur.quality = BitmapFilterQuality.LOW; 
+      circle.filters = [blur];
+      circle.graphics.drawCircle(radius, radius, radius);
+      circle.graphics.endFill();
+      s.addChild(circle);
+      return s;      
+    }
+  ]]>
+</fx:Script>
+  <s:VideoDisplay id="vid" x="0" y="0" width="320" height="240"/>
+  <mx:UIComponent id="uic" width="100" height="100" />
+</s:Application>
